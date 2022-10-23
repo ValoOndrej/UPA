@@ -40,7 +40,7 @@ class Dataset:
         collection = self.db[collection_name]
             
         req = requests.get(url)
-        filename = 'data/' + url.split('/')[-1]
+        filename = url.split('/')[-1]
         with open(filename,'wb') as output_file:
             output_file.write(req.content)
         print('Downloaded data from', url)
