@@ -47,10 +47,9 @@ if args.cancel_update:
             link_reqs = requests.get(url)
             link_soup = BeautifulSoup(link_reqs.text, 'html.parser')
             for l in link_soup.find_all('a')[1:]:
-                print(l)
                 u = requests.compat.urljoin(url, l.get('href'))
                 cancel = 'cancel' in u
                 if cancel:
-                    dataset.download_and_insert(u, True, False)
+                    dataset.download_and_insert(u, update=True, dont_remove=False)
                 else:
-                    dataset.download_and_insert(u, True)
+                    dataset.download_and_insert(u, update=True)

@@ -55,12 +55,19 @@ class Dataset:
         with open(filename,'wb') as output_file:
             output_file.write(req.content)
         print('Downloaded data from', url)
-
+        names = ""
         if zipfile.is_zipfile(filename):
             with zipfile.ZipFile(filename, 'r') as zip_ref:
                 zip_ref.extractall('data/')
+            names = zip_ref.namelist()
+        else:
+            with gzip.open(filename, 'r') as f:
+                with open(filename[:-4],'wb') as output_file:
+                    output_file.write(f.read())
+            names = [filename[5:-4]]
+                
         threads = []
-        names = zip_ref.namelist()
+        
         lists = self.chunks(names, int(len(names)/self.workers) + 1)
         for idx, names in enumerate(lists):
             threads.append(ProcessingThread(conn_string = self.connection_string,
@@ -121,11 +128,18 @@ class ProcessingThread(threading.Thread):
             file_data = json.loads(json_data)
 
             if self.update:
-                core0 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
-                core1 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
-                massage = self.collection.find_one({"$and":[{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core0},{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core1}]})
-                if massage is not None:
-                    self.collection.delete_one(massage)
+                if self.dont_remove:
+                    core0 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
+                    core1 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
+                    massage = self.collection.find_one({"$and":[{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core0},{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core1}]})
+                    if massage is not None:
+                        self.collection.delete_one(massage)
+                else:
+                    core0 = file_data["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][0]["Core"]
+                    core1 = file_data["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][1]["Core"]
+                    massage = self.collection.find_one({"$and":[{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core":core0},{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core":core1}]})
+                    if massage is not None:
+                        self.collection.delete_one(massage)
 
             if self.dont_remove:
                 self.collection.insert_one(file_data)
