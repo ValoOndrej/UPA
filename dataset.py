@@ -110,7 +110,7 @@ class ProcessingThread(threading.Thread):
                     self.collection.delete_one(massage)
 
 
-                self.collection.insert_one(file_data)
+            self.collection.insert_one(file_data)
             os.remove(name)
 
         print(f"Worker {self.idx} has finished uploading {self.name}")
