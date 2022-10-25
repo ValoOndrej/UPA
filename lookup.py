@@ -39,59 +39,65 @@ cursor_results = dataset.db.CZPTTCISMessages.find(
     )
 
 results = list(cursor_results)
+final_results = []
 
-print(f"Corect records found: {len(list(results))}")
-print("--------------------------------------------------------------------------------------------")
 for res in results:
+    final_results.append(res)
     core0 = res["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
     core1 = res["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
     start_day = datetime.datetime.strptime(res["CZPTTCISMessage"]["CZPTTInformation"]["PlannedCalendar"]["ValidityPeriod"]["StartDateTime"], '%Y-%m-%dT%H:%M:%S')
     end_day = datetime.datetime.strptime(res["CZPTTCISMessage"]["CZPTTInformation"]["PlannedCalendar"]["ValidityPeriod"]["EndDateTime"], '%Y-%m-%dT%H:%M:%S')
-    print(start_day)
-    print(core0, core1)
-    
     
     looking_date = datetime.datetime.strptime(startDate, '%Y-%m-%dT%H:%M:%S')
     bit_map = list(res["CZPTTCISMessage"]["CZPTTInformation"]["PlannedCalendar"]["BitmapDays"])
     valid = bit_map[(looking_date - start_day).days]
-    print(f"Correct valid: {valid}")
+    if(valid == '0'):
+        final_results.remove(res)
    
     canceled_results = dataset.db.CZCanceledPTTMessages.find(
         { '$and' : [
         { '$and' : [{"CZCanceledPTTMessage.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZCanceledPTTMessage.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]}, #4.1 without Bitmap check
-        { '$or' : [{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core" : core0 } , {"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : core0 }]} , 
+        { '$or' : [{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core" : core0 } , {"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : core1 }]} , 
         ]}
         )
     c_results = list(canceled_results)
-    print(f"    Canceled records found: {len(c_results)}")
+
+
     for c in c_results:
         c_core0 = c["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][0]["Core"]
-        c_bit_map = list(c["CZCanceledPTTMessage"]["PlannedCalendar"]["BitmapDays"])
-        c_valid = bit_map[(looking_date - start_day).days]
-        print(f"        Canceled valid: {c_valid}")
+        c_core1 = c["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][1]["Core"]
+        c_start_day = datetime.datetime.strptime(c["CZCanceledPTTMessage"]["PlannedCalendar"]["ValidityPeriod"]["StartDateTime"], '%Y-%m-%dT%H:%M:%S')
+        if res in final_results:
+            if c_core0 == core0 and c_core1 == core1:
+                final_results.remove(res)
+            else:
+                final_results.remove(res)
+                c_bit_map = list(c["CZCanceledPTTMessage"]["PlannedCalendar"]["BitmapDays"])
+                c_valid = bit_map[(looking_date - c_start_day).days]
+
+                if len(c_results) > 0:
+                    updated_results = dataset.db.CZUpdatedPTTMessages.find(
+                    { '$and' : [
+                    { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
+                    { "$and" : [{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : c_core0 } , {"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : c_core1}]},
+                    ]}
+                    )
+                    u_results = list(updated_results)
+                    for u in u_results:
+                        final_results.append(u)
+                        u_core0 = u["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
+                        u_core1 = u["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
+                        u_start_day = datetime.datetime.strptime(u["CZPTTCISMessage"]["CZPTTInformation"]["PlannedCalendar"]["ValidityPeriod"]["StartDateTime"], '%Y-%m-%dT%H:%M:%S')
+                        u_bit_map = list(u["CZPTTCISMessage"]["CZPTTInformation"]["PlannedCalendar"]["BitmapDays"])
+                        u_valid = u_bit_map[(looking_date - u_start_day).days]
 
 
 
-    
-    if len(c_results) > 0:
-        updated_results = dataset.db.CZUpdatedPTTMessages.find(
-        { '$and' : [
-        { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
-        { "$and" : [{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : c_core0 } , {"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core" : core0}, {"CZPTTCISMessage.Identifiers.RelatedPlannedTransportIdentifiers.Core" : core1}]} , 
-        ]}
-        )
-        u_results = list(updated_results)
-        print(f"    Updated records found: {len(u_results)}")
-    
-    print(end_day)
-    print("==============================================================================")
 
-
-
-
-
+print(f"Corect records found: {len(list(final_results))}")
+print("--------------------------------------------------------------------------------------------")
 #4.4 Printing list of stops during transport 
-for res in cursor_results:
+for res in final_results:
     for timeInfo in  res['CZPTTCISMessage']['CZPTTInformation']['CZPTTLocation']:
         print(timeInfo['Location']['PrimaryLocationName'])
         timings = timeInfo['TimingAtLocation']['Timing']

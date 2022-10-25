@@ -100,7 +100,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-u', '--url', nargs='+', type=str, help="url do download from", default = 'https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/')
 parser.add_argument('-d', '--download', action="store_true" , help="Clears the database and downloads oriinal datasets")
 parser.add_argument('-up', '--update', action="store_true" , help="update database with corections of chosen routs")
-parser.add_argument('-cup', '--cancel_update', action="store_true" , help="removed canceld routs and updates database with corections of chosen routs")
+parser.add_argument('-cup', '--cancel_update', action="store_true" , help="download collections for canceld routs and uploads them to database ")
 parser.add_argument('-c', '--clear', action="store_true", help="Clears the database")
 
 
