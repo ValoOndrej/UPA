@@ -1,10 +1,99 @@
 import requests
 import argparse
-import datetime
+import zipfile
+import threading
+import os
+import gzip
 from pprint import pprint
 from bs4 import BeautifulSoup
 
 from dataset import Dataset
+
+class ProcessingThread(threading.Thread):
+
+    def __init__(self, url, idx, names, cancel_or_not, link):
+        """Thread used for parallel processing & uploading of collections.
+        Args:
+            conn_string (str): connection string for MongoClient
+            TODO
+        """
+        threading.Thread.__init__(self)
+        self.names = names
+        self.url = url
+        self.idx = idx
+        self.cancel_or_not = cancel_or_not
+        self.link = link
+ 
+    def run(self):
+        for l in self.link:
+            u = requests.compat.urljoin(self.url, l.get('href'))
+            req = requests.get(u)
+            filename =  'data/' + u.split('/')[-1]
+            with open(filename,'wb') as output_file:
+                output_file.write(req.content)
+            
+            with gzip.open(filename, 'r') as f:
+                with open(filename[:-4],'wb') as output_file:
+                    output_file.write(f.read())
+            self.names.append(filename[5:-4])
+            os.remove(filename)
+
+        print(f"Worker {self.idx} has finished downloading {self.name}")
+
+
+
+def chunks(lst, n):
+        """Yield successive n-sized chunks from lst.
+        Args:
+            lst (list): list of elements
+            n: (int) size of chunks
+        Returns:
+            list of lists
+        """
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
+
+
+def get_list_of_names_from_zip(url):
+    print(f"Processing {url}... ")
+    req = requests.get(url)
+    filename =  'data/' + url.split('/')[-1]
+    with open(filename,'wb') as output_file:
+        output_file.write(req.content)
+    names = []
+    if zipfile.is_zipfile(filename):
+        with zipfile.ZipFile(filename, 'r') as zip_ref:
+            zip_ref.extractall('data/')
+        names = zip_ref.namelist()
+        os.remove(filename)
+    return names
+
+def get_list_of_names_from_gzips(url, cancel_or_not=True):
+    print(f"Processing {url}... ")
+    link_reqs = requests.get(url)
+    link_soup = BeautifulSoup(link_reqs.text, 'html.parser')
+    if cancel_or_not:
+        links = link_soup.find_all('a', href=lambda href: href and "cancel" in href)
+    else:
+        links = link_soup.find_all('a', href=lambda href: href and "cancel" not in href)[1:]
+
+    lists = chunks(links, int(len(links)/8) + 1)
+    names = []
+    threads = []
+    for idx, link in enumerate(lists):
+        threads.append(ProcessingThread(url = url,
+                                        link = link,
+                                        idx = idx,
+                                        names = names,
+                                        cancel_or_not = cancel_or_not))
+        threads[idx].start()
+
+        for t in threads:
+            t.join()
+
+        
+    return names
+
 
 
 parser = argparse.ArgumentParser()
@@ -13,9 +102,6 @@ parser.add_argument('-d', '--download', action="store_true" , help="Clears the d
 parser.add_argument('-up', '--update', action="store_true" , help="update database with corections of chosen routs")
 parser.add_argument('-cup', '--cancel_update', action="store_true" , help="removed canceld routs and updates database with corections of chosen routs")
 parser.add_argument('-c', '--clear', action="store_true", help="Clears the database")
-parser.add_argument('-t', '--time', type=lambda s: datetime.datetime.strptime(s, '%Y/%m/%d-%H:%M:%S'), help="Datetime of departure for query in format YYYY/MM/DD-HH:MM:SS")
-parser.add_argument('-from', '--from_city', type=str, help="Start city in query")
-parser.add_argument('-to', '--to_city', type=str, help="Destination city in query")
 
 
 args = parser.parse_args()
@@ -28,21 +114,23 @@ dataset = Dataset(name = 'upa')
 
 if args.clear:
     dataset.clear()
+    print("Cleard all collections")
 
 if args.download:
-    dataset.clear()
     for link in soup.find_all('a'):
         url = requests.compat.urljoin(args.url, link.get('href'))
         downloadable = 'GVD2022.zip' in url
         if downloadable:
-            dataset.download_and_insert(url)
+            names = get_list_of_names_from_zip(url)
+            dataset.insert(names, collection_name = 'CZPTTCISMessages')
 
 if args.update:
     for link in soup.find_all('a'):
         url = requests.compat.urljoin(args.url, link.get('href'))
         downloadable = 'GVD2022-oprava_poznamek_KJR_vybranych_tras20220126.zip' in url
         if downloadable:
-            dataset.download_and_insert(url, update=True)
+            names = get_list_of_names_from_zip(url)
+            dataset.insert(names, collection_name = 'CZPTTCISMessages', update=True)
             
 if args.cancel_update:
     for link in soup.find_all('a')[1:]:
@@ -50,58 +138,11 @@ if args.cancel_update:
         downloadable = 'zip' not in url
         parent = 'Parent' not in url
         if downloadable and parent:
-            link_reqs = requests.get(url)
-            link_soup = BeautifulSoup(link_reqs.text, 'html.parser')
-            for l in link_soup.find_all('a')[1:]:
-                u = requests.compat.urljoin(url, l.get('href'))
-                cancel = 'cancel' in u
-                if cancel:
-                    dataset.download_and_insert(u, update=True, dont_remove=False)
-                else:
-                    dataset.download_and_insert(u, update=True)
-
-if args.time:
-    startDate = args.time.isoformat()
-    print(startDate)
-
-if args.from_city:
-    srcCity = args.from_city
-if args.to_city:
-    dstCity = args.to_city
-
-#Checks if dates are inserted, and their correct order (start<end)
-if (not args.time) or (not args.from_city) or (not args.to_city):
-    print("Error Missing or location ot  datetime detected!")
-    exit(1)
-
-#Tested on  >> python3 download.py -t 03/09/2022-00:00:00 -from Břeclav -to "Bad Schandau"
-results = dataset.db.CZPTTCISMessages.find(
-    {'$and':[
-    { "CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$gte': startDate} }, #4.1 without Bitmap check
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} , #4.2 with stop check (0001 flag)
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : dstCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} #4.3 with stop check (0001 flag)
-    ]}
-    )
-
-
-print("Records found: "+str(results.count()))
-
-
-#4.4 Printing list of stops during transport 
-for res in results:
-   
-    for timeInfo in  res['CZPTTCISMessage']['CZPTTInformation']['CZPTTLocation']:
-        print(timeInfo['Location']['PrimaryLocationName'])
-        timings = timeInfo['TimingAtLocation']['Timing']
-
-        if type(timings) == list:
-           for timing in timings:
-                print("TIME: " + str(timing['Time']) + " OFFSET "+str(timing['Offset']))
-                #pprint(timing) # Not formatted data print
-        else:
-            print("TIME: " + str(timings['Time']) + " OFFSET "+str(timings['Offset']))
-            #pprint(timings)
+            canceled_names = get_list_of_names_from_gzips(url, cancel_or_not=True)
+            dataset.insert(canceled_names, collection_name = 'CZCanceledPTTMessages')
             
-        print("-------------")
+            names = get_list_of_names_from_gzips(url, cancel_or_not=False)
+            dataset.insert(names, collection_name = 'CZUpdatedPTTMessages')
 
-    print("===================================\n")
+
+

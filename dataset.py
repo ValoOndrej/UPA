@@ -1,19 +1,12 @@
-import chunk
 import threading
-import pandas as pd
-import numpy as np
 import json
 import os
-import requests
-import zipfile
-import gzip
+
 import xml.etree.ElementTree as ET
 
 import xmltodict
 import json
-import pprint
 
-from bs4 import BeautifulSoup
 from pymongo import MongoClient
 
 class Dataset:
@@ -40,7 +33,7 @@ class Dataset:
             self.client.drop_database(self.name)
             self.db = self.client[self.name]
 
-    def download_and_insert(self, url, collection_name = 'CZPTTCISMessages', update=False, dont_remove=True):
+    def insert(self, names, collection_name, update=False):
         """Downloads the data from url specified in params proces them to corect format
         and inserts them into the db.
         Args:
@@ -48,23 +41,7 @@ class Dataset:
             collection_name (str): name under which collection will be stored in db
             update (bool): if True, updates the existing table instead of only downloading new one
         """
-        print(f"Processing {url}... ")
-            
-        req = requests.get(url)
-        filename =  'data/' + url.split('/')[-1]
-        with open(filename,'wb') as output_file:
-            output_file.write(req.content)
-        print('Downloaded data from', url)
-        names = ""
-        if zipfile.is_zipfile(filename):
-            with zipfile.ZipFile(filename, 'r') as zip_ref:
-                zip_ref.extractall('data/')
-            names = zip_ref.namelist()
-        else:
-            with gzip.open(filename, 'r') as f:
-                with open(filename[:-4],'wb') as output_file:
-                    output_file.write(f.read())
-            names = [filename[5:-4]]
+        
                 
         threads = []
         
@@ -75,13 +52,12 @@ class Dataset:
                                             collection_name = collection_name,
                                             idx = idx,
                                             data_names = names,
-                                            update = update,
-                                            dont_remove = dont_remove))
+                                            update = update))
             threads[idx].start()
 
         for t in threads:
             t.join()
-        os.remove(filename)
+        
         print(f"Done.")
 
     def chunks(self, lst, n):
@@ -98,7 +74,7 @@ class Dataset:
 class ProcessingThread(threading.Thread):
 
     def __init__(self, conn_string, db_name, collection_name, idx, data_names, 
-                 update=False, dont_remove=True):
+                 update=False):
         """Thread used for parallel processing & uploading of collections.
         Args:
             conn_string (str): connection string for MongoClient
@@ -112,7 +88,6 @@ class ProcessingThread(threading.Thread):
         self.idx = idx
         self.data_names = data_names
         self.update = update
-        self.dont_remove = dont_remove
 
 
     def run(self):
@@ -128,20 +103,13 @@ class ProcessingThread(threading.Thread):
             file_data = json.loads(json_data)
 
             if self.update:
-                if self.dont_remove:
-                    core0 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
-                    core1 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
-                    massage = self.collection.find_one({"$and":[{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core0},{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core1}]})
-                    if massage is not None:
-                        self.collection.delete_one(massage)
-                else:
-                    core0 = file_data["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][0]["Core"]
-                    core1 = file_data["CZCanceledPTTMessage"]["PlannedTransportIdentifiers"][1]["Core"]
-                    massage = self.collection.find_one({"$and":[{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core":core0},{"CZCanceledPTTMessage.PlannedTransportIdentifiers.Core":core1}]})
-                    if massage is not None:
-                        self.collection.delete_one(massage)
+                core0 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][0]["Core"]
+                core1 = file_data["CZPTTCISMessage"]["Identifiers"]["PlannedTransportIdentifiers"][1]["Core"]
+                massage = self.collection.find_one({"$or":[{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core0},{"CZPTTCISMessage.Identifiers.PlannedTransportIdentifiers.Core":core1}]})
+                if massage is not None:
+                    self.collection.delete_one(massage)
 
-            if self.dont_remove:
+
                 self.collection.insert_one(file_data)
             os.remove(name)
 
