@@ -1,6 +1,8 @@
 import argparse
 import datetime
 from pprint import pprint
+import time
+
 
 from dataset import Dataset
 
@@ -16,27 +18,30 @@ dataset = Dataset(name = 'upa')
 
 if args.time:
     startDate = args.time.isoformat()
-    print(startDate)
 
 if args.from_city:
     srcCity = args.from_city
+
 if args.to_city:
     dstCity = args.to_city
 
-#Checks if dates are inserted, and their correct order (start<end)
-if (not args.time) or (not args.from_city) or (not args.to_city):
+#Checks if cities and datetime are inserted
+if (not args.time) or (not args.from_city):
     print("Error Missing or location of datetime detected!")
     exit(1)
 
 
 #Tested on  >> python3 lookup.py -t 2021/12/31-00:00:00 -from "Praha hl. n." -to "Čadca"
+
 cursor_results = dataset.db.CZPTTCISMessages.find(
     { '$and' : [
-    { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]}, #4.1 without Bitmap check
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} , #4.2 with stop check (0001 flag)
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : dstCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} #4.3 with stop check (0001 flag)
+    { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
+    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} , 
+    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : dstCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} 
     ]}
     )
+
+
 
 results = list(cursor_results)
 final_results = []
@@ -109,18 +114,70 @@ print("-------------------------------------------------------------------------
 
 #4.4 Printing list of stops during transport 
 for res in final_results:
+
+    foundSrc = False
+    foundDst = False
+    stopCounter = 0;
+
+    #Prints file identifier at first
+    textResult = '\n' + res['CZPTTCISMessage']['Identifiers']['PlannedTransportIdentifiers'][0]['ObjectType']+'_'
+    textResult = textResult + res['CZPTTCISMessage']['Identifiers']['PlannedTransportIdentifiers'][0]['Company']+'_'
+    textResult = textResult + res['CZPTTCISMessage']['Identifiers']['PlannedTransportIdentifiers'][0]['Core'] + '\n'
+
     for timeInfo in  res['CZPTTCISMessage']['CZPTTInformation']['CZPTTLocation']:
-        print(timeInfo['Location']['PrimaryLocationName'])
-        timings = timeInfo['TimingAtLocation']['Timing']
+        actCity = timeInfo['Location']['PrimaryLocationName']
 
-        if type(timings) == list:
-           for timing in timings:
-                print("TIME: " + str(timing['Time']) + " OFFSET "+str(timing['Offset']))
-                #pprint(timing) # Not formatted data print
-        else:
-            print("TIME: " + str(timings['Time']) + " OFFSET "+str(timings['Offset']))
-            #pprint(timings)
+        if actCity == srcCity:
+            foundSrc = True
+
+        
+        if foundSrc and not(foundDst):
+
+          
+            underline = len(actCity)*'='
+
             
-        print("-------------")
+            timings = timeInfo['TimingAtLocation']['Timing']
+            textResult =  textResult +'\n'+ actCity + '\n' + underline + '\n'
+            if type(timings) == list:
+                for timing in timings:
 
-    print("===================================\n")
+                    msg = '['
+                    if timing['@TimingQualifierCode'] == 'ALA':
+                        msg = msg + 'ARRIVAL]: '
+                    elif timing['@TimingQualifierCode'] == 'ALD':
+                        msg = msg + 'DEPARTURE]: '
+                    else:
+                        msg = msg + ' ]: '
+                   
+                    textResult = textResult + msg + str(timing['Time'][0:5])+'\n'
+
+                    
+            else:
+
+                msg = '['
+                if timings['@TimingQualifierCode'] == 'ALA':
+                    msg = msg + 'ARRIVAL]: '
+                elif timings['@TimingQualifierCode'] == 'ALD':
+                    msg = msg + 'DEPARTURE]: '
+                else:
+                    msg = msg + ' ]: '
+
+                textResult = textResult + msg + str(timings['Time'])[0:5]+'\n'
+
+
+            stopCounter = stopCounter +1
+            if args.to_city:
+                if actCity == dstCity:
+                    foundDst = True
+
+    if args.to_city:
+        if foundDst:
+            print(textResult)
+            print("#########################\n### End of train line ###\n#########################\n\n")
+
+    else:
+        #Elimintates printing found queries containg only start stop (ending line)
+        if stopCounter > 1:
+            print(textResult)
+            print("#########################\n### End of train line ###\n#########################\n\n")
