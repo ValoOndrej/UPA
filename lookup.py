@@ -33,15 +33,21 @@ if (not args.time) or (not args.from_city):
 
 #Tested on  >> python3 lookup.py -t 2021/12/31-00:00:00 -from "Praha hl. n." -to "Čadca"
 
-cursor_results = dataset.db.CZPTTCISMessages.find(
-    { '$and' : [
-    { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} , 
-    { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : dstCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} 
-    ]}
-    )
-
-
+if args.to_city is not None:
+    cursor_results = dataset.db.CZPTTCISMessages.find(
+        { '$and' : [
+        { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
+        { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} , 
+        { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : dstCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'} 
+        ]}
+        )
+else:
+    cursor_results = dataset.db.CZPTTCISMessages.find(
+        { '$and' : [
+        { '$and' : [{"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.StartDateTime" : {'$lte': startDate}} , {"CZPTTCISMessage.CZPTTInformation.PlannedCalendar.ValidityPeriod.EndDateTime" : {'$gte': startDate}}  ]},
+        { "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.Location.PrimaryLocationName" : srcCity , "CZPTTCISMessage.CZPTTInformation.CZPTTLocation.TrainActivity.TrainActivityType" : '0001'}
+        ]}
+        )
 
 results = list(cursor_results)
 final_results = []
