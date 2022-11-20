@@ -11,9 +11,10 @@ source ./setup.sh
 
 ## Spustenie
 ``` 
-python3 run.py [-h] [--download] [--analysis] [--graphs]
+python3 run.py [-h] [--download] [--analysis] [--graphs] [--prepare]
   -h, --help Zobrazí túto pomocnú správu a ukončí sa
   -d, --download, Download data from website
   -a, --analysis, Analyze datasets from downloaded .csv files
   -g, --graphs, Generate graphs showing distribution of values from dataset
+  -p, --prepare, Prepare data for classification task
 ```

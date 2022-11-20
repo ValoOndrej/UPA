@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--download', action="store_true", help="Download data from website")
 parser.add_argument('-a', '--analysis', action="store_true", help="Analyze datasets from downloaded .csv files")
 parser.add_argument('-g', '--graphs', action="store_true", help="Generate graphs showing distribution of values from dataset")
+parser.add_argument('-p', '--prepare', action="store_true", help="Prepare data for classification task")
 
 args = parser.parse_args()
 data = "data/"
@@ -40,3 +41,6 @@ if args.analysis:
 
 if args.graphs:
     dato.show_distribution()
+
+if args.prepare:
+    dato.prepare_for_classification()

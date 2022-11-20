@@ -37,6 +37,9 @@ class Dataset:
             else:
                 print(f"{index: <2} colum is {colum: <20} missing {missing: <3}")
 
+        x = (self.data.isnull().sum(axis = 1) == 2)
+        print(f"{x.sum()} objects are missing more then 1 value")
+
     def show_distribution(self):
         plt.title("Date study nest observed with 1 egg")
         plt.hist(self.data["Date Egg"], 10, label = "Dates")
@@ -54,8 +57,29 @@ class Dataset:
         plt.savefig('graphs/culmen_d.png')
         plt.close()
 
-        plt.title("Depth of the dorsal ridge of a bird's bill (mm)")
+        plt.title("Length of the Flipper (mm)")
         plt.boxplot(self.data["Flipper Length (mm)"].dropna())
+        plt.savefig('graphs/flipper_l.png')
+        plt.close()
+
+        plt.title("Length of the dorsal ridge of a bird's bill between Sex")
+        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
+        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.legend()
+        plt.savefig('graphs/culmen_l.png')
+        plt.close()
+
+        plt.title("Depth of the dorsal ridge of a bird's bill between Sex")
+        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
+        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.legend()
+        plt.savefig('graphs/culmen_d.png')
+        plt.close()
+
+        plt.title("Length of the Flipper between Sex")
+        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
+        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.legend()
         plt.savefig('graphs/flipper_l.png')
         plt.close()
 
@@ -91,5 +115,8 @@ class Dataset:
         plt.savefig('graphs/count.png')
         plt.close()
 
+    def prepare_for_classification(self):
+        self.data = self.data.drop(['studyName', 'Sample Number', 'Region', 'Stage', 'Individual ID', 'Clutch Completion', 'Date Egg', 'Delta 15 N (o/oo)', 'Delta 13 C (o/oo)', 'Comments'], axis=1)
 
+        print(self.data)
         
