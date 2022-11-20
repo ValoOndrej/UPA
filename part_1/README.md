@@ -30,14 +30,3 @@ python3 lookup.py [-h] [--time TIME] [--from_city LOCATION] [--to_city LOCATION]
   -from, --from_city  Start city in query
   -to, --to_city Destination city in query
 ```
-
-# UPA_2
-Autori: Ondrej Valo, Radoslav Páleník, Karel Fritz
-
-VUT FIT - příprava dat a jejich popisná charakteristika (UPA)
-
-## Príprava
-Pred spustením riešenia treba spustiť `setup.sh` pomocou príkazového riadka, pre nainštalovanie potrebných knižníc a závislostí. 
-```
-source ./setup.sh
-```
