@@ -1,5 +1,8 @@
 #!/bin/bash
 
+rm -rf "graphs"
+[[ -d "graphs" ]] || mkdir "graphs"
+
 rm -rf "data"
 [[ -d "data" ]] || mkdir "data"
 
