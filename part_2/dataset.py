@@ -10,6 +10,8 @@ class Dataset:
             self.data['Date Egg'] = pd.to_datetime(self.data['Date Egg'])
         if 'Sex' in self.data:
             self.data['Sex'] = self.data['Sex'].apply(lambda x: x if x in ['MALE', 'FEMALE'] else 'Unspecified')
+        if 'Species' in self.data:
+            self.data['Species'] = self.data['Species'].apply(lambda x: x.split(" ")[0] if x in ['Adelie Penguin (Pygoscelis adeliae)', 'Chinstrap penguin (Pygoscelis antarctica)', 'Gentoo penguin (Pygoscelis papua)'] else 'Unspecified')
 
     def show_atributes(self):
         for index, colum in enumerate(self.data.columns):
@@ -34,10 +36,30 @@ class Dataset:
         plt.legend()
         plt.show()
 
-        plt.title("Lengths of the dorsal ridge of a bird's bills")
+        plt.title("Length of the dorsal ridge of a bird's bill")
         plt.boxplot([self.data["Culmen Length (mm)"].dropna()])
         plt.show()
 
-        plt.title("Mass of body")
-        plt.violinplot(self.data["Body Mass (g)"].dropna())
+        plt.title("Depth of the dorsal ridge of a bird's bill")
+        plt.violinplot(self.data["Culmen Depth (mm)"].dropna())
         plt.show()
+
+        plt.title("Body weight between Species")
+        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').dropna(), histtype = 'step', label = "Adelie", color = 'blue')
+        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').dropna(), histtype = 'step', label = "Chinstrap", color = 'red')
+        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').dropna(), histtype = 'step', label = "Gentoo", color = 'sienna')
+        plt.legend()
+        plt.show()
+
+        plt.title("count samples between Species and sex")
+        A_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "MALE").dropna().size
+        A_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "FEMALE").dropna().size
+        C_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "MALE").dropna().size
+        C_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "FEMALE").dropna().size
+        G_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "MALE").dropna().size
+        G_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "FEMALE").dropna().size
+        plt.bar(["Adelie male", "Adelie female", "Chinstrap male", "Chinstrap female", "Gentoo male", "Gentoo female"],[A_M, A_F, C_M, C_F, G_M, G_F])
+        plt.show()
+
+
+        
