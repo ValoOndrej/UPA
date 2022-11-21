@@ -84,7 +84,15 @@ class Dataset:
         )
         plt.savefig('graphs/culmen_l_d.png')
         plt.close()
-        
+
+        sns.jointplot(
+            data=self.data,
+            x="Delta 15 N (o/oo)", y="Delta 13 C (o/oo)", hue="Species",
+            kind="kde",
+        )
+        plt.savefig('graphs/isotopes_N_C.png')
+        plt.close()
+
         sns.catplot(
             data=self.data.fillna(method="ffill"), kind="bar",
             x="Species", y="Body Mass (g)", hue="Sex",
@@ -100,8 +108,6 @@ class Dataset:
                                     'Individual ID',
                                     'Clutch Completion',
                                     'Date Egg',
-                                    'Delta 15 N (o/oo)',
-                                    'Delta 13 C (o/oo)',
                                     'Comments'],
                                     axis=1)
 
@@ -119,6 +125,11 @@ class Dataset:
         categorical_dataset['Body Mass'] = pd.qcut(categorical_dataset['Body Mass (g)'], 8)
         categorical_dataset = categorical_dataset.drop(['Body Mass (g)'], axis=1)
 
+        categorical_dataset['Body Mass'] = pd.qcut(categorical_dataset['Delta 15 N (o/oo)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Delta 15 N (o/oo)'], axis=1)
+
+        categorical_dataset['Body Mass'] = pd.qcut(categorical_dataset['Delta 13 C (o/oo)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Delta 13 C (o/oo)'], axis=1)
 
 
         numerical_dataset = self.data.interpolate()
