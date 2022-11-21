@@ -6,8 +6,8 @@ rm -rf "graphs"
 rm -rf "data"
 [[ -d "data" ]] || mkdir "data"
 
-pip install kaggle
-pip install --user kaggle
+pip3 install kaggle
+pip3 install --user kaggle
 export KAGGLE_CONFIG_DIR=.
 chmod 600 ./kaggle.json
 
