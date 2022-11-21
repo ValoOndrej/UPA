@@ -1,5 +1,6 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None
+import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -47,129 +48,49 @@ class Dataset:
         print(f"{x.sum()} objects are missing more then 1 value")
 
     def show_distribution(self):
-        plt.title("Date study nest observed with 1 egg")
-        plt.hist(self.data["Date Egg"], 10, label = "Dates")
-        plt.legend()
-        plt.savefig('graphs/date_egg.png')
+        sns.set_theme(style="ticks")
+        sns.pairplot(self.data.drop('Sample Number', axis=1), hue="Species")
+        plt.savefig('graphs/corelation_a.png')
         plt.close()
 
-        plt.title("Length of the dorsal ridge of a bird's bill (mm)")
-        plt.violinplot([self.data["Culmen Length (mm)"].dropna()])
-        plt.savefig('graphs/culmen_l.png')
-        plt.close()
-
-        plt.title("Depth of the dorsal ridge of a bird's bill (mm)")
-        plt.violinplot(self.data["Culmen Depth (mm)"].dropna())
-        plt.savefig('graphs/culmen_d.png')
-        plt.close()
-
-        plt.title("Length of the Flipper (mm)")
-        plt.boxplot(self.data["Flipper Length (mm)"].dropna())
+        sns.set_theme(style="darkgrid")
+        sns.displot(
+            self.data, x="Flipper Length (mm)", col="Species", row="Sex",
+            binwidth=3, height=3, facet_kws=dict(margin_titles=True),
+        )
         plt.savefig('graphs/flipper_l.png')
         plt.close()
 
-        plt.title("Length of the dorsal ridge of a bird's bill between Sex")
-        plt.hist(
-            self.data["Culmen Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
-            histtype = 'step', 
-            label = "Adelie male", 
-            color = 'blue'
-        )
-        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), 
-            histtype = 'step',
-            label = "Adelie female",
-            color = 'red'
-        )
-        plt.legend()
-        plt.savefig('graphs/culmen_l_sex.png')
+        sns.set_theme(style="ticks", palette="pastel")
+        sns.violinplot(x="Species", y="Culmen Length (mm)",
+                    hue="Sex", palette=["m", "g"],
+                    data=self.data)
+        sns.despine(offset=10, trim=True)
+        plt.savefig('graphs/culmen_l.png')
         plt.close()
 
-        plt.title("Depth of the dorsal ridge of a bird's bill between Sex")
-        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
-            histtype = 'step',
-            label = "Adelie male",
-            color = 'blue'
-        )
-        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
-        plt.legend()
-        plt.savefig('graphs/culmen_d_sex.png')
+        sns.set_theme(style="ticks", palette="pastel")
+        sns.boxplot(x="Species", y="Culmen Depth (mm)",
+                    hue="Sex", palette=["m", "g"],
+                    data=self.data)
+        sns.despine(offset=10, trim=True)
+        plt.savefig('graphs/culmen_d.png')
         plt.close()
 
-        plt.title("Length of the Flipper between Sex")
-        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
-            histtype = 'step',
-            label = "Adelie male",
-            color = 'blue'
+        sns.jointplot(
+            data=self.data,
+            x="Culmen Length (mm)", y="Culmen Depth (mm)", hue="Species",
+            kind="kde",
         )
-        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), 
-            histtype = 'step',
-            label = "Adelie female",
-            color = 'red'
-        )
-        plt.legend()
-        plt.savefig('graphs/flipper_l_sex.png')
+        plt.savefig('graphs/culmen_l_d.png')
         plt.close()
-
-        plt.title("Body weight between Sex for Adelie Species")
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Adelie')
-            .where(self.data["Sex"] == "MALE")
-            .dropna(), histtype = 'step', label = "Adelie male", color = 'blue'
-        )
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Adelie')
-            .where(self.data["Sex"] == "FEMALE")
-            .dropna(), histtype = 'step', label = "Adelie female", color = 'red'
-        )
-        plt.legend()
-        plt.savefig('graphs/weight_A.png')
-        plt.close()
-
-        plt.title("Body weight between Sex for Chinstrap Species")
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Chinstrap')
-            .where(self.data["Sex"] == "MALE")
-            .dropna(), histtype = 'step', label = "Chinstrap male", color = 'blue'
-        )
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Chinstrap')
-            .where(self.data["Sex"] == "FEMALE")
-            .dropna(), histtype = 'step', label = "Chinstrap female", color = 'red'
-        )
-        plt.legend()
-        plt.savefig('graphs/weight_C.png')
-        plt.close()
-
-        plt.title("Body weight between Sex for Gentoo Species")
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Gentoo')
-            .where(self.data["Sex"] == "MALE")
-            .dropna(), histtype = 'step', label = "Gentoo male", color = 'blue'
-        )
-        plt.hist(
-            self.data["Body Mass (g)"]
-            .where(self.data["Species"] == 'Gentoo')
-            .where(self.data["Sex"] == "FEMALE")
-            .dropna(), histtype = 'step', label = "Gentoo female", color = 'red'
-        )
-        plt.legend()
-        plt.savefig('graphs/weight_G.png')
-        plt.close()
-
-        plt.title("count samples between Species and sex")
-        a_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "MALE").dropna().size
-        a_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "FEMALE").dropna().size
-        c_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "MALE").dropna().size
-        c_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "FEMALE").dropna().size
-        g_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "MALE").dropna().size
-        g_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "FEMALE").dropna().size
-        plt.bar(["Adelie male", "Adelie female", "Chinstrap male", "Chinstrap female", "Gentoo male", "Gentoo female"],[a_m, a_f, c_m, c_f, g_m, g_f])
-        plt.savefig('graphs/count.png')
+        
+        sns.catplot(
+            data=self.data.fillna(method="ffill"), kind="bar",
+            x="Species", y="Body Mass (g)", hue="Sex",
+            errorbar="sd", palette="dark", alpha=.6, height=6
+        ).despine(left=True).set_axis_labels("", "Body mass (g)").legend.set_title("")
+        plt.savefig('graphs/weight.png')
         plt.close()
 
     def prepare_for_classification(self):
