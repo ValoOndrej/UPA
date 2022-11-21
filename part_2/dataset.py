@@ -1,4 +1,5 @@
 import pandas as pd
+pd.options.mode.chained_assignment = None
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -6,18 +7,21 @@ class Dataset:
 
     def __init__(self, name):
         self.data = pd.read_csv(name)
+        self.data.index = [x for x in range(1, len(self.data.values)+1)]
+        self.data.index.name = 'id'
         if 'Date Egg' in self.data:
             self.data['Date Egg'] = pd.to_datetime(self.data['Date Egg'])
         if 'Sex' in self.data:
-            self.data['Sex'] = self.data['Sex'].apply(lambda x: x if x in ['MALE', 'FEMALE'] else 'Unspecified')
+            self.data['Sex'] = self.data['Sex'].apply(
+                lambda x: x if x in ['MALE', 'FEMALE'] else np.NaN)
         if 'Species' in self.data:
-            self.data['Species'] = self.data['Species'].apply(lambda x: x.split(" ")[0] if x in ['Adelie Penguin (Pygoscelis adeliae)', 'Chinstrap penguin (Pygoscelis antarctica)', 'Gentoo penguin (Pygoscelis papua)'] else 'Unspecified')
-
-    def __export_to_png(self, fig, name):
-        fig.tight_layout()
-        plt_name = f"plts/{name}.png"
-        fig.savefig(plt_name)
-        print(f"Saving plot to '{plt_name}'")
+            self.data['Species'] = self.data['Species'].apply(
+                lambda x: x.split(" ")[0] if x in [
+                    'Adelie Penguin (Pygoscelis adeliae)',
+                    'Chinstrap penguin (Pygoscelis antarctica)',
+                    'Gentoo penguin (Pygoscelis papua)'
+                ] else 'Unspecified'
+            )
 
     def show_atributes(self):
         for index, colum in enumerate(self.data.columns):
@@ -33,6 +37,8 @@ class Dataset:
                 print(f"{index: <2} colum is {colum: <20} missing {missing: <3} earliest date is {min_value: <10}, latest date is {max_value: <10}")
             elif colum in ["studyName", "Species", "Region", "Island", "Stage", "Clutch Completion", "Sex"]:
                 unique_values = self.data[colum].unique()
+                if colum == "Sex":
+                    unique_values = unique_values[:-1]
                 print(f"{index: <2} colum is {colum: <20} missing {missing: <3} posible values are {', '.join(unique_values)}")
             else:
                 print(f"{index: <2} colum is {colum: <20} missing {missing: <3}")
@@ -63,60 +69,151 @@ class Dataset:
         plt.close()
 
         plt.title("Length of the dorsal ridge of a bird's bill between Sex")
-        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
-        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.hist(
+            self.data["Culmen Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
+            histtype = 'step', 
+            label = "Adelie male", 
+            color = 'blue'
+        )
+        plt.hist(self.data["Culmen Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), 
+            histtype = 'step',
+            label = "Adelie female",
+            color = 'red'
+        )
         plt.legend()
-        plt.savefig('graphs/culmen_l.png')
+        plt.savefig('graphs/culmen_l_sex.png')
         plt.close()
 
         plt.title("Depth of the dorsal ridge of a bird's bill between Sex")
-        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
+        plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
+            histtype = 'step',
+            label = "Adelie male",
+            color = 'blue'
+        )
         plt.hist(self.data["Culmen Depth (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
         plt.legend()
-        plt.savefig('graphs/culmen_d.png')
+        plt.savefig('graphs/culmen_d_sex.png')
         plt.close()
 
         plt.title("Length of the Flipper between Sex")
-        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
-        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "MALE").dropna(), 
+            histtype = 'step',
+            label = "Adelie male",
+            color = 'blue'
+        )
+        plt.hist(self.data["Flipper Length (mm)"].where(self.data["Sex"] == "FEMALE").dropna(), 
+            histtype = 'step',
+            label = "Adelie female",
+            color = 'red'
+        )
         plt.legend()
-        plt.savefig('graphs/flipper_l.png')
+        plt.savefig('graphs/flipper_l_sex.png')
         plt.close()
 
         plt.title("Body weight between Sex for Adelie Species")
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Adelie male", color = 'blue')
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Adelie female", color = 'red')
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Adelie')
+            .where(self.data["Sex"] == "MALE")
+            .dropna(), histtype = 'step', label = "Adelie male", color = 'blue'
+        )
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Adelie')
+            .where(self.data["Sex"] == "FEMALE")
+            .dropna(), histtype = 'step', label = "Adelie female", color = 'red'
+        )
         plt.legend()
         plt.savefig('graphs/weight_A.png')
         plt.close()
 
         plt.title("Body weight between Sex for Chinstrap Species")
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Chinstrap male", color = 'blue')
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Chinstrap female", color = 'red')
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Chinstrap')
+            .where(self.data["Sex"] == "MALE")
+            .dropna(), histtype = 'step', label = "Chinstrap male", color = 'blue'
+        )
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Chinstrap')
+            .where(self.data["Sex"] == "FEMALE")
+            .dropna(), histtype = 'step', label = "Chinstrap female", color = 'red'
+        )
         plt.legend()
         plt.savefig('graphs/weight_C.png')
         plt.close()
 
         plt.title("Body weight between Sex for Gentoo Species")
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "MALE").dropna(), histtype = 'step', label = "Gentoo male", color = 'blue')
-        plt.hist(self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "FEMALE").dropna(), histtype = 'step', label = "Gentoo female", color = 'red')
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Gentoo')
+            .where(self.data["Sex"] == "MALE")
+            .dropna(), histtype = 'step', label = "Gentoo male", color = 'blue'
+        )
+        plt.hist(
+            self.data["Body Mass (g)"]
+            .where(self.data["Species"] == 'Gentoo')
+            .where(self.data["Sex"] == "FEMALE")
+            .dropna(), histtype = 'step', label = "Gentoo female", color = 'red'
+        )
         plt.legend()
         plt.savefig('graphs/weight_G.png')
         plt.close()
 
         plt.title("count samples between Species and sex")
-        A_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "MALE").dropna().size
-        A_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "FEMALE").dropna().size
-        C_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "MALE").dropna().size
-        C_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "FEMALE").dropna().size
-        G_M = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "MALE").dropna().size
-        G_F = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "FEMALE").dropna().size
-        plt.bar(["Adelie male", "Adelie female", "Chinstrap male", "Chinstrap female", "Gentoo male", "Gentoo female"],[A_M, A_F, C_M, C_F, G_M, G_F])
+        a_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "MALE").dropna().size
+        a_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Adelie').where(self.data["Sex"] == "FEMALE").dropna().size
+        c_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "MALE").dropna().size
+        c_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Chinstrap').where(self.data["Sex"] == "FEMALE").dropna().size
+        g_m = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "MALE").dropna().size
+        g_f = self.data["Body Mass (g)"].where(self.data["Species"] == 'Gentoo').where(self.data["Sex"] == "FEMALE").dropna().size
+        plt.bar(["Adelie male", "Adelie female", "Chinstrap male", "Chinstrap female", "Gentoo male", "Gentoo female"],[a_m, a_f, c_m, c_f, g_m, g_f])
         plt.savefig('graphs/count.png')
         plt.close()
 
     def prepare_for_classification(self):
-        self.data = self.data.drop(['studyName', 'Sample Number', 'Region', 'Stage', 'Individual ID', 'Clutch Completion', 'Date Egg', 'Delta 15 N (o/oo)', 'Delta 13 C (o/oo)', 'Comments'], axis=1)
+        self.data = self.data.drop(['studyName',
+                                    'Sample Number',
+                                    'Region', 'Stage',
+                                    'Individual ID',
+                                    'Clutch Completion',
+                                    'Date Egg',
+                                    'Delta 15 N (o/oo)',
+                                    'Delta 13 C (o/oo)',
+                                    'Comments'],
+                                    axis=1)
 
-        print(self.data)
+        categorical_dataset = self.data.dropna()
+
+        categorical_dataset['Culmen Length'] = pd.qcut(categorical_dataset['Culmen Length (mm)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Culmen Length (mm)'], axis=1)
+
+        categorical_dataset['Culmen Depth'] = pd.qcut(categorical_dataset['Culmen Depth (mm)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Culmen Depth (mm)'], axis=1)
+
+        categorical_dataset['Flipper Length'] = pd.qcut(categorical_dataset['Flipper Length (mm)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Flipper Length (mm)'], axis=1)
+
+        categorical_dataset['Body Mass'] = pd.qcut(categorical_dataset['Body Mass (g)'], 8)
+        categorical_dataset = categorical_dataset.drop(['Body Mass (g)'], axis=1)
+
+
+
+        numerical_dataset = self.data.interpolate()
+        df_gender = pd.get_dummies(numerical_dataset['Sex'])
+        numerical_dataset = pd.concat([numerical_dataset, df_gender], axis=1)
+        numerical_dataset = numerical_dataset.drop(['Sex'], axis=1)
+
+        df_species = pd.get_dummies(numerical_dataset['Species'])
+        numerical_dataset = pd.concat([numerical_dataset, df_species], axis=1)
+        numerical_dataset = numerical_dataset.drop(['Species'], axis=1)
+
+        df_island = pd.get_dummies(numerical_dataset['Island'])
+        numerical_dataset = pd.concat([numerical_dataset, df_island], axis=1)
+        numerical_dataset = numerical_dataset.drop(['Island'], axis=1)
+
+        categorical_dataset.to_csv('data/categorical_data.csv')
+
+        numerical_dataset.to_csv('data/numerical_data.csv')
         
