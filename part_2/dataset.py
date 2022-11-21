@@ -45,7 +45,7 @@ class Dataset:
                 print(f"{index: <2} colum is {colum: <20} missing {missing: <3}")
 
         x = (self.data.isnull().sum(axis = 1) == 2)
-        print(f"{x.sum()} objects are missing more then 1 value")
+        print(f"{x.sum()} objects are missing more than 1 value")
 
     def show_distribution(self):
         sns.set_theme(style="ticks")

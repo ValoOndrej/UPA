@@ -1,7 +1,7 @@
-matplotlib==3.4.3
+matplotlib==3.6.2
 numpy>=1.19.5
 pandas>=1.1.5
 requests==2.25.1
-seaborn==0.11.2
+seaborn==0.12.1
 ssh-pymongo==1.0.4
 xmltodict==0.13.0
