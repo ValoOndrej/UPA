@@ -35,7 +35,7 @@ class Dataset:
             elif colum in ["Date Egg"]:
                 max_value = self.data[colum].max()
                 min_value = self.data[colum].min()
-                print(f"{index: <2} colum is {colum: <20} missing {missing: <3} earliest date is {min_value: <10}, latest date is {max_value: <10}")
+                print(f"{index: <2} colum is {colum: <20} missing {missing: <3} earliest date is {min_value}, latest date is {max_value}")
             elif colum in ["studyName", "Species", "Region", "Island", "Stage", "Clutch Completion", "Sex"]:
                 unique_values = self.data[colum].unique()
                 if colum == "Sex":
