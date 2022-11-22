@@ -145,6 +145,9 @@ class Dataset:
         numerical_dataset = pd.concat([numerical_dataset, df_island], axis=1)
         numerical_dataset = numerical_dataset.drop(['Island'], axis=1)
 
+        for column in numerical_dataset.columns:
+            numerical_dataset[column] = numerical_dataset[column]  / numerical_dataset[column].abs().max()
+
         categorical_dataset.to_csv('data/categorical_data.csv')
 
         numerical_dataset.to_csv('data/numerical_data.csv')
