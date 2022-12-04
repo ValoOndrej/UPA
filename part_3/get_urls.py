@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-b', '--base', type=str, help="Base page of eshop", default="https://www.bodyworld.eu")
 parser.add_argument('-p', '--product', type=str, help="page with products in eshop", default="https://www.bodyworld.eu/cz/en/performance-c523")
-parser.add_argument('-s', '--save', action="store_true", help="Save list of links as file")
+parser.add_argument('-s', '--save', action="store_true", help="Save list of links as file", default=True)
 
 args = parser.parse_args()
 
@@ -34,7 +34,7 @@ for iterator in range(1,int(number_of_pages) + 1):
 
 #write links to .txt file or print to stdout
 if args.save:
-    with open(r'./links.txt', 'w') as fp:
+    with open(r'./urls.txt', 'w') as fp:
         for item in product_links:
             fp.write("%s\n" % item)
         print("Done")
