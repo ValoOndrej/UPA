@@ -12,3 +12,9 @@ python3 get_urls.py [-h] [--base-url URL_LINK] [--product-url URL_LINK] [--save]
   -p, --product-url page with products in eshop
   -s, --save Save list of links as file
 ```
+
+## Spustenie
+``` 
+python3 get_data.py [-h]
+  -h, --help show this help message and exit
+```
