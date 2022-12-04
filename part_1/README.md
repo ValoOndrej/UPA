@@ -14,7 +14,7 @@ Pred spustením riešenia treba spustiť `setup.sh` pomocou príkazového riadka
 ## Stiahnutia
 ``` 
 python3 download.py [-h] [--download] [--url URL_LINK] [--clear] [--update] [--cancel_update]
-  -h, --help Zobrazí túto pomocnú správu a ukončí sa
+  -h, --help show this help message and exit
   -u, --url url do download from
   -up, --update update database with corections of chosen routs
   -d, --download  downloads original datasets
@@ -25,7 +25,7 @@ python3 download.py [-h] [--download] [--url URL_LINK] [--clear] [--update] [--c
 ## Spustenie
 ``` 
 python3 lookup.py [-h] [--time TIME] [--from_city LOCATION] [--to_city LOCATION]
-  -h, --help Zobrazí túto pomocnú správu a ukončí sa
+  -h, --help show this help message and exit
   -t, --time Datetime of departure for query in format YYYY/MM/DD-HH:MM:SS
   -from, --from_city  Start city in query
   -to, --to_city Destination city in query
