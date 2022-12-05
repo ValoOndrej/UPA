@@ -3,17 +3,27 @@ from bs4 import BeautifulSoup
 from lxml import etree
 import argparse
 import sys
+import pandas as pd
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.stdin)
+parser.add_argument('-rf', '--read-file', action="store_true", help="read from file")
+parser.add_argument('-s', '--save', action="store_true", help="Save list of links as file")
 
 args = parser.parse_args()
 
-file = open(args.infile.name, "r")
-text = file.readlines()
+if args.read_file:
+    inf = open("urls.txt").readlines()
+else:
+    if not sys.stdin.isatty():
+        inf = sys.stdin.readlines()
+    else:
+        inf = sys.stdin
 
-for link in text[0:100]:
+inf = list(map(lambda s: s.strip(), inf))
+names = []
+prices = []
+for link in inf:
     request = requests.get(link)
     soup = BeautifulSoup(request.text, 'html.parser')
     dom = etree.HTML(str(soup))
@@ -35,7 +45,14 @@ for link in text[0:100]:
             price = dom.xpath(price_xpath)[0].text
         except:
             price = None
+    if args.save:
+        print(f"{link.strip()}\t{name}\t{price}")
+        names.append(name)
+        prices.append(price)
+    else:
+        print(f"{link.strip()}\t{name}\t{price}")
 
-    print(name, price)
-
+if args.save:
+    df = pd.DataFrame({"url":inf, "name":names, "price":prices})
+    df.to_csv("out.tsv", sep="\t", index=False)
     
