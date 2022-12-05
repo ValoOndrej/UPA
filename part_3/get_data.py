@@ -4,6 +4,7 @@ from lxml import etree
 import argparse
 import sys
 import pandas as pd
+from signal import signal, SIGPIPE, SIG_DFL
 
 
 parser = argparse.ArgumentParser()
@@ -24,6 +25,7 @@ inf = list(map(lambda s: s.strip(), inf))
 names = []
 prices = []
 for link in inf:
+    signal(SIGPIPE,SIG_DFL)
     request = requests.get(link)
     soup = BeautifulSoup(request.text, 'html.parser')
     dom = etree.HTML(str(soup))

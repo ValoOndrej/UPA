@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
+from signal import signal, SIGPIPE, SIG_DFL
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-b', '--base', type=str, help="Base page of eshop", default="https://www.bodyworld.eu")
@@ -20,6 +21,7 @@ number_of_pages = pages[-1:][0].text
 #get all links for each page
 product_links = []
 for iterator in range(1,int(number_of_pages) + 1):
+    signal(SIGPIPE,SIG_DFL)
     request = requests.get(f"{args.product}?page={iterator}")
     soup = BeautifulSoup(request.text, 'html.parser')
 
