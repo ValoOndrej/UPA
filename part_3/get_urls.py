@@ -25,17 +25,14 @@ for iterator in range(1,int(number_of_pages) + 1):
     request = requests.get(f"{args.product}?page={iterator}")
     soup = BeautifulSoup(request.text, 'html.parser')
 
-    product_list = soup.find_all("div",{"class":"c-product-card c-product-card--alt"})
+    product_list = soup.find_all("div",{"class":"c-product-card__media"})
 
     for product in product_list:
-        try:
-            link = product.find("a",{"class":"c-product-card__img"}).get('href')
-            if args.save:
-                product_links.append(base_url + link)
-            else:
-                print(base_url + link)
-        except:
-            pass
+        link = product.find("a",{"class":"c-product-card__img"}).get('href')
+        if args.save:
+            product_links.append(base_url + link)
+        else:
+            print(base_url + link)
 
 #write links to .txt file or print to stdout
 if args.save:
