@@ -28,11 +28,14 @@ for iterator in range(1,int(number_of_pages) + 1):
     product_list = soup.find_all("div",{"class":"c-product-card c-product-card--alt"})
 
     for product in product_list:
-        link = product.find("a",{"class":"c-product-card__img"}).get('href')
-        if args.save:
-            product_links.append(base_url + link)
-        else:
-            print(base_url + link)
+        try:
+            link = product.find("a",{"class":"c-product-card__img"}).get('href')
+            if args.save:
+                product_links.append(base_url + link)
+            else:
+                print(base_url + link)
+        except:
+            pass
 
 #write links to .txt file or print to stdout
 if args.save:
