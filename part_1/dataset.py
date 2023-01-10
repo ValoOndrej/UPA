@@ -17,7 +17,7 @@ class Dataset:
             name (str): mongo database name
         """
         self.name = name
-        self.connection_string = "mongodb://ubuntu:klat8klat@ec2-54-87-72-203.compute-1.amazonaws.com:27017/{}?authSource=admin".format(self.name)
+        self.connection_string = "mongodb://name:password@address_to_server/{}?authSource=admin".format(self.name)
         self.workers = workers
         self.client = MongoClient(self.connection_string)
         self.db = self.client[self.name]
@@ -37,7 +37,7 @@ class Dataset:
         """Downloads the data from url specified in params proces them to corect format
         and inserts them into the db.
         Args:
-            url (str): link for downloading data
+            names (list): names of downloadet data files
             collection_name (str): name under which collection will be stored in db
             update (bool): if True, updates the existing table instead of only downloading new one
         """
@@ -45,7 +45,7 @@ class Dataset:
                 
         threads = []
         
-        lists = self.chunks(names, int(len(names)/self.workers) + 1)
+        lists = self.genarate_chunks(names, int(len(names)/self.workers) + 1)
         for idx, names in enumerate(lists):
             threads.append(ProcessingThread(conn_string = self.connection_string,
                                             db_name=self.name,
@@ -60,7 +60,7 @@ class Dataset:
         
         print(f"Done.")
 
-    def chunks(self, lst, n):
+    def genarate_chunks(self, lst, n):
         """Yield successive n-sized chunks from lst.
         Args:
             lst (list): list of elements
@@ -78,7 +78,11 @@ class ProcessingThread(threading.Thread):
         """Thread used for parallel processing & uploading of collections.
         Args:
             conn_string (str): connection string for MongoClient
-            TODO
+            db_name (str): name of databse on server
+            collection_name (str): name of collection in database
+            idx (int): index of thread
+            data_names (list) Names of downloadet data files
+            update (bool): if True, updates the existing table instead of only downloading new one
         """
         threading.Thread.__init__(self)
         self.client = MongoClient(conn_string)

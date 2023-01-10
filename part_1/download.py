@@ -12,10 +12,13 @@ from dataset import Dataset
 class ProcessingThread(threading.Thread):
 
     def __init__(self, url, idx, names, cancel_or_not, link):
-        """Thread used for parallel processing & uploading of collections.
+        """Thread used for parallel processing & dowloading of data.
         Args:
-            conn_string (str): connection string for MongoClient
-            TODO
+            url (url): 
+            idx (int): index of thread
+            names (list) Names of downloadet data files
+            cancel_or_not
+            link
         """
         threading.Thread.__init__(self)
         self.names = names
@@ -42,7 +45,7 @@ class ProcessingThread(threading.Thread):
 
 
 
-def chunks(lst, n):
+def genarate_chunks(lst, n):
         """Yield successive n-sized chunks from lst.
         Args:
             lst (list): list of elements
@@ -77,7 +80,7 @@ def get_list_of_names_from_gzips(url, cancel_or_not=True):
     else:
         links = link_soup.find_all('a', href=lambda href: href and "cancel" not in href)[1:]
 
-    lists = chunks(links, int(len(links)/8) + 1)
+    lists = genarate_chunks(links, int(len(links)/8) + 1)
     names = []
     threads = []
     for idx, link in enumerate(lists):
